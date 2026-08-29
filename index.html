@@ -638,7 +638,8 @@ function dbRowToBarber(row){
     nameEn: row.nameen,
     whatsapp: row.whatsapp,
     price: row.price,
-    photo: row.photo || undefined
+    photo: row.photo || undefined,
+    offDays: Array.isArray(row.off_days) ? row.off_days : []
   };
 }
 
@@ -711,19 +712,24 @@ function selectBarber(id){
   state.barber = barbers.find(b=>b.id===id);
   document.querySelectorAll('#barberList .option-card').forEach(c=>c.classList.toggle('selected', c.dataset.id===id));
   document.getElementById('next2').classList.remove('disabled');
+  state.date = null;
+  state.time = null;
+  renderDates();
 }
 
 /* ===== RENDER DATES ===== */
 function renderDates(){
   const el = document.getElementById('dateRow');
   const today = new Date();
+  const offDays = state.barber ? (state.barber.offDays||[]) : [];
   let html = '';
   for(let i=0;i<7;i++){
     const d = new Date(today);
     d.setDate(today.getDate()+i);
     const key = d.toISOString().slice(0,10);
+    const isOff = offDays.includes(d.getDay());
     html += `
-      <div class="date-pill" data-key="${key}" onclick="selectDate('${key}')">
+      <div class="date-pill ${isOff?'disabled':''}" data-key="${key}" onclick="${isOff?'':'selectDate(\''+key+'\')'}" style="${isOff?'opacity:.3;pointer-events:none;':''}">
         <div class="dname">${t('dayNames')[d.getDay()]}</div>
         <div class="dnum">${d.getDate()}</div>
         <div class="dmon">${t('monthNames')[d.getMonth()]}</div>
@@ -736,13 +742,13 @@ function renderDates(){
   }
 }
 
-function selectDate(key){
+async function selectDate(key){
   const changed = state.date !== key;
   state.date = key;
   state.dateObj = new Date(key+'T00:00:00');
   if(changed) state.time = null;
   document.querySelectorAll('.date-pill').forEach(p=>p.classList.toggle('selected', p.dataset.key===key));
-  renderTimes();
+  await renderTimes();
   document.getElementById('next3').classList.toggle('disabled', state.time===null);
 }
 
@@ -750,15 +756,32 @@ function timeLabel(h){
   return h>12 ? (h-12)+':00 '+t('pm') : (h===12? '12:00 '+t('pm') : h+':00 '+t('am'));
 }
 
-function renderTimes(){
+async function fetchBookedHours(barberId, date){
+  try{
+    const res = await fetch(`${SUPABASE_URL}/rest/v1/bookings?select=booking_hour&barber_id=eq.${barberId}&booking_date=eq.${date}`, {
+      headers: { apikey: SUPABASE_KEY, Authorization: 'Bearer '+SUPABASE_KEY }
+    });
+    if(!res.ok) return [];
+    const rows = await res.json();
+    return rows.map(r=>r.booking_hour);
+  }catch(e){ return []; }
+}
+
+async function renderTimes(){
   const el = document.getElementById('timeGrid');
   if(!state.date){ el.innerHTML=''; return; }
+  el.innerHTML = `<div style="grid-column:1/-1;text-align:center;color:var(--text-muted);font-size:13px;padding:20px 0;">${currentLang==='ar'?'جاري تحميل الأوقات...':'Loading times...'}</div>`;
+
   const isToday = state.date === new Date().toISOString().slice(0,10);
   const now = new Date();
+  const bookedHours = state.barber ? await fetchBookedHours(state.barber.id, state.date) : [];
+
   let html = '';
   for(let h=OPEN_HOUR; h<CLOSE_HOUR; h++){
     const disabledPast = isToday && h <= now.getHours();
-    html += `<div class="time-slot ${disabledPast?'disabled':''} ${state.time===h?'selected':''}" data-h="${h}" onclick="${disabledPast?'':'selectTime('+h+')'}" style="${disabledPast?'opacity:.35;pointer-events:none;':''}">${timeLabel(h)}</div>`;
+    const isBooked = bookedHours.includes(h);
+    const disabled = disabledPast || isBooked;
+    html += `<div class="time-slot ${disabled?'disabled':''} ${state.time===h?'selected':''}" data-h="${h}" onclick="${disabled?'':'selectTime('+h+')'}" style="${disabled?'opacity:.35;pointer-events:none;'+(isBooked?'text-decoration:line-through;':''):''}">${timeLabel(h)}</div>`;
   }
   el.innerHTML = html;
 }
@@ -775,6 +798,7 @@ function nextFromStep1(){
     goStep(2);
   } else {
     state.barber = null;
+    renderDates();
     goStep(3);
   }
 }
@@ -806,7 +830,7 @@ function renderSummary(){
 }
 
 /* ===== CONFIRM -> WHATSAPP ===== */
-function confirmBooking(){
+async function confirmBooking(){
   const name = document.getElementById('custName').value.trim();
   const phone = document.getElementById('custPhone').value.trim();
   const notes = document.getElementById('custNotes').value.trim();
@@ -814,6 +838,54 @@ function confirmBooking(){
   if(!name || !phone){
     alert(t('fillAlert'));
     return;
+  }
+
+  const confirmBtn = document.querySelector('.step#step4 .btn.wa');
+  const oldText = confirmBtn.textContent;
+
+  if(state.barber){
+    confirmBtn.textContent = currentLang==='ar' ? 'جاري التأكيد...' : 'Confirming...';
+    confirmBtn.classList.add('disabled');
+    try{
+      const res = await fetch(`${SUPABASE_URL}/rest/v1/bookings`, {
+        method: 'POST',
+        headers: {
+          apikey: SUPABASE_KEY,
+          Authorization: 'Bearer '+SUPABASE_KEY,
+          'Content-Type': 'application/json',
+          Prefer: 'return=minimal'
+        },
+        body: JSON.stringify({
+          barber_id: state.barber.id,
+          booking_date: state.date,
+          booking_hour: state.time,
+          customer_name: name,
+          customer_phone: phone
+        })
+      });
+      if(!res.ok){
+        if(res.status === 409){
+          alert(currentLang==='ar'
+            ? 'عذراً، هذا الوقت انحجز للتو من زبون ثاني. اختر وقت آخر.'
+            : 'Sorry, this time was just booked by someone else. Please pick another time.');
+          await renderTimes();
+          state.time = null;
+          document.getElementById('next3').classList.add('disabled');
+          confirmBtn.textContent = oldText;
+          confirmBtn.classList.remove('disabled');
+          goStep(3);
+          return;
+        }
+        throw new Error('booking insert failed');
+      }
+    }catch(e){
+      alert(currentLang==='ar' ? 'تعذّر تأكيد الحجز، تحقق من الإنترنت وحاول ثانية' : 'Could not confirm booking, check your connection and try again');
+      confirmBtn.textContent = oldText;
+      confirmBtn.classList.remove('disabled');
+      return;
+    }
+    confirmBtn.textContent = oldText;
+    confirmBtn.classList.remove('disabled');
   }
 
   const dateLabel = `${t('dayNames')[state.dateObj.getDay()]} ${state.dateObj.getDate()} ${t('monthNames')[state.dateObj.getMonth()]}`;
