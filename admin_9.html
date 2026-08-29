@@ -1,0 +1,420 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>لوحة تحكم PRO CUT</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@300;400;500;700;900&family=Lalezar&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg-deep:#150809;
+    --bg-maroon:#3d1116;
+    --bg-maroon-2:#4a151b;
+    --bg-card:#2a0d10;
+    --gold:#c9a24b;
+    --gold-light:#e8d9b5;
+    --gold-dim:#8a6b3a;
+    --text-cream:#efe6d8;
+    --text-muted:#b8a58f;
+    --line:#5a2229;
+    --danger:#c65c4e;
+  }
+  *{margin:0;padding:0;box-sizing:border-box;}
+  body{
+    background:var(--bg-deep);
+    color:var(--text-cream);
+    font-family:'Tajawal',sans-serif;
+    min-height:100vh;
+  }
+  .wrap{max-width:640px;margin:0 auto;padding:28px 18px 90px;}
+
+  header{text-align:center;margin-bottom:30px;}
+  header .logo{font-family:'Lalezar',cursive;font-size:34px;letter-spacing:4px;color:var(--gold-light);}
+  header .logo span{color:var(--gold);}
+  header .sub{font-size:13px;color:var(--text-muted);margin-top:6px;}
+
+  .gate{
+    max-width:340px;margin:120px auto;text-align:center;
+  }
+  .gate input{
+    width:100%;padding:14px;border-radius:12px;border:1px solid var(--line);
+    background:var(--bg-card);color:var(--text-cream);font-size:20px;text-align:center;
+    letter-spacing:6px;margin:18px 0;
+  }
+  .gate button{
+    width:100%;padding:14px;border-radius:100px;border:none;
+    background:var(--gold);color:#1a0a0d;font-weight:700;font-size:15px;cursor:pointer;
+  }
+  .gate .err{color:var(--danger);font-size:13px;margin-top:10px;min-height:16px;}
+
+  .notice{
+    background:var(--bg-card);border:1px solid var(--gold-dim);border-radius:14px;
+    padding:16px 18px;font-size:13px;color:var(--text-muted);line-height:1.9;margin-bottom:24px;
+  }
+  .notice b{color:var(--gold-light);}
+
+  .toolbar{display:flex;gap:10px;margin-bottom:22px;flex-wrap:wrap;}
+  .btn{
+    padding:12px 20px;border-radius:100px;border:1px solid var(--line);
+    background:transparent;color:var(--text-cream);font-size:14px;cursor:pointer;
+    font-family:'Tajawal',sans-serif;
+  }
+  .btn.primary{background:var(--gold);color:#1a0a0d;border-color:var(--gold);font-weight:700;}
+  .btn.danger{border-color:var(--danger);color:var(--danger);}
+  .btn.small{padding:8px 16px;font-size:13px;}
+  input[type=file]{display:none;}
+
+  .barber-row{
+    display:flex;align-items:center;gap:14px;
+    border:1px solid var(--line);background:var(--bg-card);
+    border-radius:16px;padding:14px 16px;margin-bottom:12px;
+  }
+  .b-avatar{
+    width:56px;height:56px;border-radius:50%;flex-shrink:0;
+    background:var(--bg-maroon);display:flex;align-items:center;justify-content:center;
+    font-family:'Lalezar',cursive;font-size:22px;color:var(--gold-dim);overflow:hidden;
+  }
+  .b-avatar img{width:100%;height:100%;object-fit:cover;}
+  .b-info{flex:1;min-width:0;}
+  .b-name{font-size:16px;font-weight:500;}
+  .b-meta{font-size:12px;color:var(--text-muted);margin-top:3px;direction:ltr;text-align:right;}
+  .b-actions{display:flex;gap:8px;}
+  .icon-btn{
+    width:36px;height:36px;border-radius:50%;border:1px solid var(--line);
+    background:transparent;color:var(--text-cream);cursor:pointer;font-size:15px;
+    display:flex;align-items:center;justify-content:center;
+  }
+  .icon-btn.danger{border-color:var(--danger);color:var(--danger);}
+
+  .empty{
+    text-align:center;padding:50px 20px;color:var(--text-muted);font-size:14px;line-height:1.9;
+  }
+
+  /* ===== FORM MODAL ===== */
+  .overlay{
+    position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:100;
+    display:none;align-items:flex-end;justify-content:center;
+  }
+  .overlay.open{display:flex;}
+  .sheet{
+    width:100%;max-width:520px;max-height:90vh;overflow-y:auto;
+    background:var(--bg-maroon);border-radius:24px 24px 0 0;
+    padding:26px 22px 34px;
+  }
+  .sheet h3{font-family:'Lalezar',cursive;font-weight:400;font-size:24px;color:var(--gold-light);margin-bottom:20px;}
+  .field{margin-bottom:16px;}
+  .field label{display:block;font-size:13px;color:var(--text-muted);margin-bottom:8px;}
+  .field input{
+    width:100%;padding:13px 15px;background:var(--bg-card);border:1px solid var(--line);
+    border-radius:12px;color:var(--text-cream);font-family:'Tajawal',sans-serif;font-size:15px;
+  }
+  .field input:focus{outline:none;border-color:var(--gold);}
+  .field .hint{font-size:11px;color:var(--text-muted);margin-top:6px;}
+
+  .photo-picker{
+    display:flex;align-items:center;gap:14px;margin-bottom:16px;
+  }
+  .photo-preview{
+    width:64px;height:64px;border-radius:50%;background:var(--bg-card);
+    border:1px solid var(--line);overflow:hidden;flex-shrink:0;
+    display:flex;align-items:center;justify-content:center;color:var(--text-muted);font-size:11px;
+  }
+  .photo-preview img{width:100%;height:100%;object-fit:cover;}
+
+  .sheet-actions{display:flex;gap:10px;margin-top:24px;}
+  .sheet-actions .btn{flex:1;text-align:center;}
+
+  .toast{
+    position:fixed;bottom:24px;left:50%;transform:translateX(-50%);
+    background:var(--gold);color:#1a0a0d;padding:12px 24px;border-radius:100px;
+    font-size:13px;font-weight:500;z-index:200;opacity:0;transition:.3s;pointer-events:none;
+  }
+  .toast.show{opacity:1;}
+</style>
+</head>
+<body>
+
+<div class="gate" id="gate">
+  <div class="logo" style="font-family:'Lalezar',cursive;font-size:30px;color:var(--gold-light);">PRO<span style="color:var(--gold);">CUT</span></div>
+  <p style="color:var(--text-muted);font-size:13px;margin-top:8px;">أدخل رمز الدخول للوحة التحكم</p>
+  <input type="password" id="pinInput" placeholder="••••••" maxlength="12" style="letter-spacing:4px;">
+  <button class="btn primary" onclick="checkPin()" style="width:100%;">دخول</button>
+  <div class="err" id="pinErr"></div>
+</div>
+
+<div class="wrap" id="dashboard" style="display:none;">
+  <header>
+    <div class="logo">PRO<span>CUT</span></div>
+    <div class="sub">لوحة تحكم الحلاقين</div>
+  </header>
+
+  <div class="notice">
+    <b>ملاحظة:</b> التعديلات هنا تنحفظ بقاعدة بيانات مركزية، وتنعكس فوراً على الموقع لكل الزوار من أي جهاز.
+  </div>
+
+  <div class="toolbar">
+    <div class="btn primary" onclick="openForm()">+ إضافة حلاق جديد</div>
+    <div class="btn small" onclick="exportBackup()">تصدير نسخة احتياطية</div>
+    <div class="btn small" onclick="document.getElementById('importFile').click()">استيراد</div>
+    <input type="file" id="importFile" accept=".json" onchange="importBackup(event)">
+  </div>
+
+  <div id="barberList"><div class="empty">جاري التحميل...</div></div>
+</div>
+
+<div class="overlay" id="formOverlay">
+  <div class="sheet">
+    <h3 id="formTitle">إضافة حلاق</h3>
+
+    <div class="photo-picker">
+      <div class="photo-preview" id="photoPreview">صورة</div>
+      <div>
+        <div class="btn small" onclick="document.getElementById('photoInput').click()">اختر صورة</div>
+        <input type="file" id="photoInput" accept="image/*" onchange="handlePhoto(event)">
+      </div>
+    </div>
+
+    <div class="field">
+      <label>اسم الحلاق (عربي)</label>
+      <input type="text" id="fName" placeholder="مثال: سلوم">
+    </div>
+    <div class="field">
+      <label>اسم الحلاق (إنكليزي)</label>
+      <input type="text" id="fNameEn" placeholder="e.g. Salloum">
+    </div>
+    <div class="field">
+      <label>رقم الواتساب</label>
+      <input type="tel" id="fWhatsapp" placeholder="9647XXXXXXXXX" dir="ltr" style="text-align:left;">
+      <div class="hint">بصيغة دولية بدون + وبدون مسافات، مثال: 9647889629741</div>
+    </div>
+    <div class="field">
+      <label>السعر (د.ع)</label>
+      <input type="number" id="fPrice" placeholder="25000" value="25000">
+    </div>
+
+    <div class="sheet-actions">
+      <div class="btn" onclick="closeForm()">إلغاء</div>
+      <div class="btn primary" onclick="saveBarber()">حفظ</div>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+const SUPABASE_URL = 'https://dawatphdxvqakbewbtia.supabase.co';
+const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRhd2F0cGhkeHZxYWtiZXdidGlhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODgwMTIyOTgsImV4cCI6MjEwMzU4ODI5OH0.c0GimzM7WN05FAWRArhwy3Q7wkU_61a68kO7BoS5i3A';
+const PIN_KEY = 'procut_admin_pin';
+const DEFAULT_PIN = 'cut123';
+
+let barbers = [];
+let editingId = null;
+let photoDataUrl = null;
+
+function dbHeaders(extra){
+  return Object.assign({
+    apikey: SUPABASE_KEY,
+    Authorization: 'Bearer '+SUPABASE_KEY,
+    'Content-Type': 'application/json'
+  }, extra||{});
+}
+function dbRowToBarber(row){
+  return { id: row.id, name: row.name, nameEn: row.nameen, whatsapp: row.whatsapp, price: row.price, photo: row.photo || undefined };
+}
+function barberToDbRow(b){
+  return { id: b.id, name: b.name, nameen: b.nameEn||'', whatsapp: b.whatsapp, price: b.price, photo: b.photo || null };
+}
+
+/* ===== PIN GATE ===== */
+function getPin(){
+  return localStorage.getItem(PIN_KEY) || DEFAULT_PIN;
+}
+function checkPin(){
+  const val = document.getElementById('pinInput').value.trim();
+  if(val === getPin()){
+    document.getElementById('gate').style.display='none';
+    document.getElementById('dashboard').style.display='block';
+    loadBarbers();
+  } else {
+    document.getElementById('pinErr').textContent = 'الرمز غير صحيح';
+  }
+}
+document.getElementById('pinInput').addEventListener('keydown', e=>{ if(e.key==='Enter') checkPin(); });
+
+/* ===== DATA ===== */
+async function loadBarbers(){
+  document.getElementById('barberList').innerHTML = '<div class="empty">جاري التحميل...</div>';
+  try{
+    const res = await fetch(`${SUPABASE_URL}/rest/v1/barbers?select=*&order=name`, { headers: dbHeaders() });
+    if(!res.ok) throw new Error('fetch failed');
+    const rows = await res.json();
+    barbers = rows.map(dbRowToBarber);
+  }catch(e){
+    barbers = [];
+    document.getElementById('barberList').innerHTML = '<div class="empty">تعذّر الاتصال بقاعدة البيانات. تحقق من الإنترنت وحاول ثانية.</div>';
+    return;
+  }
+  renderList();
+}
+
+function initials(name){ return name.trim().split(' ')[0][0] || '?'; }
+
+function renderList(){
+  const el = document.getElementById('barberList');
+  if(barbers.length===0){
+    el.innerHTML = `<div class="empty">لا يوجد حلاقين بقاعدة البيانات بعد.<br>ابدأ بإضافة حلاق جديد من الزر بالأعلى.</div>`;
+    return;
+  }
+  el.innerHTML = barbers.map(b => `
+    <div class="barber-row">
+      <div class="b-avatar">${b.photo ? `<img src="${b.photo}">` : initials(b.name)}</div>
+      <div class="b-info">
+        <div class="b-name">${b.name}${b.nameEn ? ' · '+b.nameEn : ''}</div>
+        <div class="b-meta">${b.whatsapp || '—'} &nbsp;·&nbsp; ${Number(b.price||0).toLocaleString('en-US')} د.ع</div>
+      </div>
+      <div class="b-actions">
+        <div class="icon-btn" onclick="openForm('${b.id}')" title="تعديل">✎</div>
+        <div class="icon-btn danger" onclick="deleteBarber('${b.id}')" title="حذف">✕</div>
+      </div>
+    </div>
+  `).join('');
+}
+
+/* ===== FORM ===== */
+function openForm(id){
+  editingId = id || null;
+  photoDataUrl = null;
+  const b = id ? barbers.find(x=>x.id===id) : null;
+
+  document.getElementById('formTitle').textContent = id ? 'تعديل الحلاق' : 'إضافة حلاق';
+  document.getElementById('fName').value = b ? b.name : '';
+  document.getElementById('fNameEn').value = b ? (b.nameEn||'') : '';
+  document.getElementById('fWhatsapp').value = b ? (b.whatsapp||'') : '';
+  document.getElementById('fPrice').value = b ? (b.price||25000) : 25000;
+
+  const preview = document.getElementById('photoPreview');
+  if(b && b.photo){
+    preview.innerHTML = `<img src="${b.photo}">`;
+    photoDataUrl = b.photo;
+  } else {
+    preview.innerHTML = 'صورة';
+  }
+
+  document.getElementById('formOverlay').classList.add('open');
+}
+function closeForm(){
+  document.getElementById('formOverlay').classList.remove('open');
+}
+
+function handlePhoto(e){
+  const file = e.target.files[0];
+  if(!file) return;
+  const reader = new FileReader();
+  reader.onload = function(ev){
+    photoDataUrl = ev.target.result;
+    document.getElementById('photoPreview').innerHTML = `<img src="${photoDataUrl}">`;
+  };
+  reader.readAsDataURL(file);
+}
+
+async function saveBarber(){
+  const name = document.getElementById('fName').value.trim();
+  const nameEn = document.getElementById('fNameEn').value.trim();
+  const whatsapp = document.getElementById('fWhatsapp').value.trim().replace(/\D/g,'');
+  const price = Number(document.getElementById('fPrice').value) || 0;
+
+  if(!name){ alert('اكتب اسم الحلاق'); return; }
+  if(!whatsapp){ alert('اكتب رقم الواتساب بصيغة دولية'); return; }
+
+  const saveBtn = document.querySelector('.sheet-actions .btn.primary');
+  const oldText = saveBtn.textContent;
+  saveBtn.textContent = 'جاري الحفظ...';
+
+  try{
+    if(editingId){
+      const b = { id: editingId, name, nameEn, whatsapp, price, photo: photoDataUrl || (barbers.find(x=>x.id===editingId)||{}).photo };
+      const res = await fetch(`${SUPABASE_URL}/rest/v1/barbers?id=eq.${editingId}`, {
+        method: 'PATCH',
+        headers: dbHeaders({ Prefer: 'return=minimal' }),
+        body: JSON.stringify(barberToDbRow(b))
+      });
+      if(!res.ok) throw new Error('update failed');
+    } else {
+      const newId = 'b_' + Date.now();
+      const b = { id: newId, name, nameEn, whatsapp, price, photo: photoDataUrl || null };
+      const res = await fetch(`${SUPABASE_URL}/rest/v1/barbers`, {
+        method: 'POST',
+        headers: dbHeaders({ Prefer: 'return=minimal' }),
+        body: JSON.stringify(barberToDbRow(b))
+      });
+      if(!res.ok) throw new Error('insert failed');
+    }
+    await loadBarbers();
+    closeForm();
+    showToast('تم الحفظ');
+  }catch(e){
+    alert('حدث خطأ أثناء الحفظ، تحقق من الاتصال وحاول ثانية');
+  }
+  saveBtn.textContent = oldText;
+}
+
+async function deleteBarber(id){
+  if(!confirm('تحذف هذا الحلاق نهائياً من القائمة؟')) return;
+  try{
+    const res = await fetch(`${SUPABASE_URL}/rest/v1/barbers?id=eq.${id}`, {
+      method: 'DELETE',
+      headers: dbHeaders()
+    });
+    if(!res.ok) throw new Error('delete failed');
+    await loadBarbers();
+    showToast('تم الحذف');
+  }catch(e){
+    alert('تعذّر الحذف، حاول ثانية');
+  }
+}
+
+/* ===== BACKUP ===== */
+function exportBackup(){
+  const blob = new Blob([JSON.stringify(barbers, null, 2)], {type:'application/json'});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = 'procut-barbers-backup.json';
+  a.click();
+  URL.revokeObjectURL(url);
+}
+function importBackup(e){
+  const file = e.target.files[0];
+  if(!file) return;
+  const reader = new FileReader();
+  reader.onload = async function(ev){
+    try{
+      const parsed = JSON.parse(ev.target.result);
+      if(!Array.isArray(parsed)) throw new Error('bad format');
+      const res = await fetch(`${SUPABASE_URL}/rest/v1/barbers`, {
+        method: 'POST',
+        headers: dbHeaders({ Prefer: 'resolution=merge-duplicates,return=minimal' }),
+        body: JSON.stringify(parsed.map(barberToDbRow))
+      });
+      if(!res.ok) throw new Error('import failed');
+      await loadBarbers();
+      showToast('تم الاستيراد بنجاح');
+    }catch(err){
+      alert('ملف غير صالح أو حدث خطأ بالرفع');
+    }
+  };
+  reader.readAsText(file);
+  e.target.value = '';
+}
+
+/* ===== TOAST ===== */
+function showToast(msg){
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  setTimeout(()=>t.classList.remove('show'), 2000);
+}
+</script>
+</body>
+</html>
